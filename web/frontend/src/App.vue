@@ -46,39 +46,86 @@
           </div>
         </div>
 
-        <div class="calendar-visual">
+        <div class="visual-calendar">
           <div class="calendar-header">
-            <button @click="previousMonth" class="nav-button">◀ Anterior</button>
-            <h3>{{ currentMonthName }} ({{ currentMonth.days }} dias)</h3>
-            <button @click="nextMonth" class="nav-button">Próximo ▶</button>
-          </div>
-          
-          <div class="calendar-grid">
-            <div class="weekday" v-for="day in weekdays" :key="day">{{ day }}</div>
-            <div 
-              v-for="day in calendarDays" 
-              :key="day.date"
-              :class="['calendar-day', { 'today': day.isToday, 'other-month': !day.inMonth }]"
-              @click="selectDay(day)"
-            >
-              <div class="day-number">{{ day.dayNumber }}</div>
-              <div class="day-events">
-                <span v-for="event in day.events" :key="event" class="event-icon">{{ event }}</span>
+            <button @click="previousMonth" class="nav-btn">◀ Anterior</button>
+            <div class="month-info">
+              <h3>Mês {{ currentMonth.index }} - {{ currentMonth.name }}</h3>
+              <p>{{ formatDate(currentMonth.start) }} - {{ currentMonth.days }} dias</p>
+              <div class="chronologies">
+                <strong>Cronologias do Ano:</strong><br>
+                <span class="chrono-item">Ussher: {{ chronologies.ussher }} AM (desde Criação)</span><br>
+                <span class="chrono-item">Hebraico: {{ chronologies.hebrew }} AM (Anno Mundi)</span><br>
+                <span class="chrono-item">Gregoriano: {{ chronologies.gregorian }} DC (Era Cristã)</span>
               </div>
             </div>
+            <button @click="nextMonth" class="nav-btn">Próximo ▶</button>
+            <button @click="goToToday" class="today-btn">Hoje</button>
           </div>
-          
-          <div class="day-details" v-if="selectedDay">
-            <h4>{{ formatDate(selectedDay.date) }}</h4>
-            <div class="day-info">
-              <div v-for="festival in getDayFestivals(selectedDay)" :key="festival.name" class="festival-detail">
-                <strong>★ {{ festival.name }}</strong> ({{ festival.portuguese_name }})
-                <p>{{ festival.description }}</p>
+
+          <div class="calendar-container">
+            <div class="calendar-grid">
+              <div class="weekday-header" v-for="day in weekdays" :key="day">{{ day }}</div>
+              
+              <div 
+                v-for="(day, index) in calendarDays" 
+                :key="index"
+                :class="['day-cell', { 
+                  'today': day.isToday, 
+                  'has-events': day.events.length > 0,
+                  'selected': selectedDay && selectedDay.dayInMonth === day.dayInMonth
+                }]"
+                @click="selectDay(day)"
+              >
+                <div class="day-number">{{ day.dayInMonth }}</div>
+                <div class="gregorian-date">({{ day.gregorianDate }})</div>
+                <div class="day-events">
+                  <div v-for="event in day.events" :key="event.type" class="event-marker">
+                    {{ event.icon }}
+                  </div>
+                </div>
               </div>
-              <div class="season-info">
-                <strong>Estação:</strong> 
-                Jerusalém: {{ calendarData.current_season.jerusalem }} | 
-                São Paulo: {{ calendarData.current_season.sao_paulo }}
+            </div>
+
+            <div class="events-panel">
+              <div class="legend">
+                <h4>Legenda:</h4>
+                <div class="legend-item">🌑 Lua Nova</div>
+                <div class="legend-item">🌓 Lua Crescente</div>
+                <div class="legend-item">🌕 Lua Cheia</div>
+                <div class="legend-item">🌗 Lua Minguante</div>
+                <div class="legend-item">★ Festival</div>
+                <div class="legend-item">🌍 Estação Astronômica</div>
+                <div class="legend-item">Fundo azul = Hoje</div>
+              </div>
+
+              <div class="day-details" v-if="selectedDay">
+                <h4>Eventos do Dia:</h4>
+                <div class="selected-day-info">
+                  <strong>Dia {{ selectedDay.dayInMonth }} ({{ selectedDay.gregorianDate }})</strong>
+                </div>
+                
+                <div class="season-info">
+                  <strong>🌍 Estação Astronômica:</strong><br>
+                  Jerusalém: {{ calendarData.current_season.jerusalem }}<br>
+                  São Paulo: {{ calendarData.current_season.sao_paulo }}
+                </div>
+
+                <div v-if="selectedDay.events.length > 0" class="events-list">
+                  <div v-for="event in selectedDay.events" :key="event.name" class="event-detail">
+                    <div class="event-header">
+                      <strong>{{ event.icon }} {{ event.name }}</strong>
+                      <span v-if="event.portuguese" class="portuguese-name">({{ event.portuguese }})</span>
+                    </div>
+                    <div v-if="event.description" class="event-description">
+                      {{ event.description }}
+                    </div>
+                  </div>
+                </div>
+                
+                <div v-else class="no-events">
+                  Nenhum evento especial.
+                </div>
               </div>
             </div>
           </div>
@@ -162,87 +209,91 @@ export default {
       return calendarData.value?.months[currentMonthIndex.value] || {}
     })
     
-    const currentMonthName = computed(() => {
-      const month = currentMonth.value
-      return month.name ? `${month.name} (${month.index})` : ''
+    const chronologies = computed(() => {
+      if (!currentMonth.value.start) return { ussher: 0, hebrew: 0, gregorian: 0 }
+      const gregorianYear = new Date(currentMonth.value.start).getFullYear()
+      return {
+        ussher: gregorianYear + 4004,
+        hebrew: gregorianYear + 3760,
+        gregorian: gregorianYear
+      }
     })
     
     const calendarDays = computed(() => {
       if (!currentMonth.value.start) return []
       
       const startDate = new Date(currentMonth.value.start)
-      const endDate = new Date(currentMonth.value.end)
       const days = []
+      const today = new Date().toISOString().split('T')[0]
       
-      // Add days from previous month to fill first week
-      const firstDayOfWeek = startDate.getDay()
-      for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-        const date = new Date(startDate)
-        date.setDate(date.getDate() - i - 1)
-        days.push({
-          date: date.toISOString().split('T')[0],
-          dayNumber: date.getDate(),
-          inMonth: false,
-          isToday: false,
-          events: []
-        })
-      }
+      // Calculate start column (Sunday = 0)
+      const startWeekday = startDate.getDay()
       
       // Add days of current month
-      const currentDate = new Date(startDate)
-      while (currentDate <= endDate) {
+      for (let d = 1; d <= currentMonth.value.days; d++) {
+        const currentDate = new Date(startDate)
+        currentDate.setDate(startDate.getDate() + d - 1)
         const dateStr = currentDate.toISOString().split('T')[0]
-        const dayEvents = getDayEvents(dateStr)
+        const gregorianDate = currentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+        
+        const dayEvents = getDayEvents(d, dateStr)
         
         days.push({
+          dayInMonth: d,
+          gregorianDate: gregorianDate,
           date: dateStr,
-          dayNumber: currentDate.getDate(),
-          inMonth: true,
-          isToday: dateStr === new Date().toISOString().split('T')[0],
+          isToday: dateStr === today,
           events: dayEvents
         })
-        
-        currentDate.setDate(currentDate.getDate() + 1)
-      }
-      
-      // Add days from next month to fill last week
-      while (days.length % 7 !== 0) {
-        const date = new Date(currentDate)
-        days.push({
-          date: date.toISOString().split('T')[0],
-          dayNumber: date.getDate(),
-          inMonth: false,
-          isToday: false,
-          events: []
-        })
-        currentDate.setDate(currentDate.getDate() + 1)
       }
       
       return days
     })
     
-    const getDayEvents = (dateStr) => {
+    const getDayEvents = (dayInMonth, dateStr) => {
       const events = []
+      
+      // New moon on day 1
+      if (dayInMonth === 1) {
+        events.push({ type: 'new_moon', icon: '🌑', name: 'Lua Nova', description: 'Início do mês bíblico baseado na conjunção astronômica Sol-Lua.' })
+      }
       
       // Check for festivals
       calendarData.value?.festivals.forEach(festival => {
         if (festival.date === dateStr) {
-          events.push('★')
+          events.push({
+            type: 'festival',
+            icon: '★',
+            name: festival.name,
+            portuguese: festival.portuguese_name,
+            description: festival.description
+          })
         }
       })
       
       // Check for seasons
       calendarData.value?.seasons.forEach(season => {
         if (season.utc.split('T')[0] === dateStr) {
-          events.push('🌍')
+          events.push({
+            type: 'season',
+            icon: '🌍',
+            name: season.event,
+            description: getSeasonDescription(season.event)
+          })
         }
       })
       
       return events
     }
     
-    const getDayFestivals = (day) => {
-      return calendarData.value?.festivals.filter(f => f.date === day.date) || []
+    const getSeasonDescription = (event) => {
+      const descriptions = {
+        'March Equinox': 'Em Jerusalém, marca o início da primavera (Hemisfério Norte). Em São Paulo, marca o início do outono (Hemisfério Sul)',
+        'June Solstice': 'Em Jerusalém, marca o início do verão (Hemisfério Norte). Em São Paulo, marca o início do inverno (Hemisfério Sul)',
+        'September Equinox': 'Em Jerusalém, marca o início do outono (Hemisfério Norte). Em São Paulo, marca o início da primavera (Hemisfério Sul)',
+        'December Solstice': 'Em Jerusalém, marca o início do inverno (Hemisfério Norte). Em São Paulo, marca o início do verão (Hemisfério Sul)'
+      }
+      return descriptions[event] || ''
     }
     
     const selectDay = (day) => {
@@ -252,12 +303,28 @@ export default {
     const previousMonth = () => {
       if (currentMonthIndex.value > 0) {
         currentMonthIndex.value--
+        selectedDay.value = null
       }
     }
     
     const nextMonth = () => {
       if (calendarData.value && currentMonthIndex.value < calendarData.value.months.length - 1) {
         currentMonthIndex.value++
+        selectedDay.value = null
+      }
+    }
+    
+    const goToToday = () => {
+      const today = new Date().toISOString().split('T')[0]
+      if (calendarData.value) {
+        for (let i = 0; i < calendarData.value.months.length; i++) {
+          const month = calendarData.value.months[i]
+          if (today >= month.start && today <= month.end) {
+            currentMonthIndex.value = i
+            selectedDay.value = null
+            break
+          }
+        }
       }
     }
 
@@ -272,17 +339,17 @@ export default {
       selectedDay,
       weekdays,
       currentMonth,
-      currentMonthName,
+      chronologies,
       calendarDays,
       generateCalendar,
       exportCSV,
       exportICS,
       formatDate,
       formatDateTime,
-      getDayFestivals,
       selectDay,
       previousMonth,
-      nextMonth
+      nextMonth,
+      goToToday
     }
   }
 }
@@ -402,115 +469,225 @@ button:disabled {
   padding: 0.5rem;
 }
 
-.calendar-visual {
-  padding: 2rem;
+.visual-calendar {
+  padding: 1rem;
 }
 
 .calendar-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 2rem;
   margin-bottom: 2rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
 }
 
-.nav-button {
+.nav-btn, .today-btn {
   background: #667eea;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.9rem;
 }
 
-.nav-button:hover {
+.nav-btn:hover, .today-btn:hover {
   background: #5a6fd8;
 }
 
+.today-btn {
+  background: #28a745;
+}
+
+.today-btn:hover {
+  background: #218838;
+}
+
+.month-info {
+  flex: 1;
+  text-align: center;
+}
+
+.month-info h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.month-info p {
+  margin: 0 0 1rem 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.chronologies {
+  font-size: 0.8rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+.chrono-item {
+  display: inline-block;
+  margin-right: 1rem;
+}
+
+.calendar-container {
+  display: flex;
+  gap: 2rem;
+}
+
 .calendar-grid {
+  flex: 2;
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 1px;
   background: #ddd;
   border: 1px solid #ddd;
-  margin-bottom: 2rem;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-.weekday {
-  background: #f8f9fa;
-  padding: 1rem;
+.weekday-header {
+  background: #667eea;
+  color: white;
+  padding: 0.75rem;
   text-align: center;
   font-weight: 600;
-  color: #666;
+  font-size: 0.9rem;
 }
 
-.calendar-day {
+.day-cell {
   background: white;
   padding: 0.5rem;
-  min-height: 80px;
+  min-height: 100px;
   cursor: pointer;
   border: 2px solid transparent;
+  position: relative;
 }
 
-.calendar-day:hover {
+.day-cell:hover {
   background: #f8f9fa;
 }
 
-.calendar-day.today {
-  background: #e3f2fd;
-  border-color: #2196f3;
+.day-cell.today {
+  background: lightblue;
 }
 
-.calendar-day.other-month {
-  background: #f5f5f5;
-  color: #ccc;
+.day-cell.selected {
+  border-color: #667eea;
+  background: #e3f2fd;
+}
+
+.day-cell.has-events {
+  background: #fff8e1;
 }
 
 .day-number {
   font-weight: 600;
+  font-size: 1.1rem;
   margin-bottom: 0.25rem;
+}
+
+.gregorian-date {
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 0.5rem;
 }
 
 .day-events {
   display: flex;
-  gap: 0.25rem;
   flex-wrap: wrap;
+  gap: 0.25rem;
 }
 
-.event-icon {
-  font-size: 0.8rem;
+.event-marker {
+  font-size: 1rem;
+  line-height: 1;
 }
 
-.day-details {
-  background: #f8f9fa;
+.events-panel {
+  flex: 1;
+  background: white;
+  border-radius: 8px;
   padding: 1.5rem;
-  border-radius: 4px;
-  border: 1px solid #eee;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  max-height: 600px;
+  overflow-y: auto;
 }
 
-.day-info {
-  margin-top: 1rem;
+.legend {
+  margin-bottom: 2rem;
 }
 
-.festival-detail {
+.legend h4 {
+  margin: 0 0 1rem 0;
+  color: #333;
+}
+
+.legend-item {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.day-details h4 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 0.5rem;
+}
+
+.selected-day-info {
   margin-bottom: 1rem;
   padding: 1rem;
-  background: white;
+  background: #f8f9fa;
   border-radius: 4px;
-  border-left: 4px solid #667eea;
-}
-
-.festival-detail p {
-  margin-top: 0.5rem;
-  color: #666;
-  line-height: 1.5;
 }
 
 .season-info {
+  margin-bottom: 1.5rem;
   padding: 1rem;
-  background: white;
+  background: #e8f5e8;
   border-radius: 4px;
   border-left: 4px solid #28a745;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.events-list {
+  margin-top: 1rem;
+}
+
+.event-detail {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #fff8e1;
+  border-radius: 4px;
+  border-left: 4px solid #ff9800;
+}
+
+.event-header {
+  margin-bottom: 0.5rem;
+}
+
+.portuguese-name {
   color: #666;
+  font-style: italic;
+  font-weight: normal;
+}
+
+.event-description {
+  color: #555;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.no-events {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
 }
 
 .export-buttons {
