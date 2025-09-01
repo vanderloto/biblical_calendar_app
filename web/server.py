@@ -98,6 +98,11 @@ HTML_TEMPLATE = """
 @app.route('/')
 def serve_index():
     """Serve the main page."""
+    # Check if Vue.js index.html exists
+    vue_index = os.path.join(STATIC_DIR, 'index.html')
+    if os.path.exists(vue_index):
+        return send_from_directory(STATIC_DIR, 'index.html')
+    # Fallback to test page
     return render_template_string(HTML_TEMPLATE)
 
 @app.route('/<path:path>')
