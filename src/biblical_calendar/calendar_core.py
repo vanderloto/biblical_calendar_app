@@ -394,7 +394,7 @@ def compute_seasons_for_year(year: int) -> list[dict]:
     mapping = {0: "March Equinox", 1: "June Solstice", 2: "September Equinox", 3: "December Solstice"}
     out = []
     for ti, ev in zip(times, events):
-        out.append({"event": mapping[ev], "utc": ti.utc_datetime().replace(tzinfo=timezone.utc)})
+        out.append({"event": mapping[ev], "utc": ti.utc_datetime()})
     return out
 
 def sunrise_sunset(location_cfg: dict, target_date: date) -> dict:
