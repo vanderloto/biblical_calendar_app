@@ -321,11 +321,6 @@ export default {
       
       const events = []
       
-      // New moon on day 1
-      if (dayInMonth === 1) {
-        events.push({ type: 'new_moon', icon: '🌑', name: 'Lua Nova', description: 'Início do mês bíblico baseado na conjunção astronômica Sol-Lua.' })
-      }
-      
       // Check for festivals
       if (calendarData.value.festivals) {
         calendarData.value.festivals.forEach(festival => {
