@@ -23,14 +23,21 @@ Versão:
     1.0.0
 """
 
-from .calendar import (
-    BiblicalCalendarApp,
+# Import GUI version (with tkinter)
+try:
+    from .calendar import BiblicalCalendarApp, main
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+
+# Import core version (web-compatible)
+from .calendar_core import (
+    BiblicalCalendarCore,
     generate_biblical_months_dynamic,
     map_festivals_to_dates,
     export_events_to_ics,
     compute_seasons_for_year,
     sunrise_sunset,
-    main,
     FESTIVALS_DEF,
     YESHUA_EVENTS_DEF,
     MONTH_NAMES,
@@ -38,22 +45,26 @@ from .calendar import (
     SAOPAULO
 )
 
-__version__ = "1.3.0"
+__version__ = "2.0.0"
 __author__ = "Vander Loto"
 __email__ = "vander.loto@outlook.com"
 __description__ = "Calendário bíblico-lunissolar dinâmico com cálculos astronômicos precisos"
 
 __all__ = [
-    "BiblicalCalendarApp",
+    "BiblicalCalendarCore",
     "generate_biblical_months_dynamic", 
     "map_festivals_to_dates",
     "export_events_to_ics",
     "compute_seasons_for_year",
     "sunrise_sunset",
-    "main",
     "FESTIVALS_DEF",
     "YESHUA_EVENTS_DEF", 
     "MONTH_NAMES",
     "JERUSALEM",
-    "SAOPAULO"
+    "SAOPAULO",
+    "GUI_AVAILABLE"
 ]
+
+# Add GUI exports if available
+if GUI_AVAILABLE:
+    __all__.extend(["BiblicalCalendarApp", "main"])

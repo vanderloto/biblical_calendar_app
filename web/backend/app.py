@@ -23,7 +23,8 @@ src_path = os.path.join(os.path.dirname(__file__), '..', '..', 'src')
 if src_path not in sys.path:
     sys.path.insert(0, src_path)
 
-from biblical_calendar.calendar import (
+from biblical_calendar.calendar_core import (
+    BiblicalCalendarCore,
     generate_biblical_months_dynamic,
     map_festivals_to_dates,
     export_events_to_ics,
