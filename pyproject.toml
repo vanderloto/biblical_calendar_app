@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "biblical-calendar-app"
+version = "1.2.0"
+description = "Calendário bíblico-lunissolar dinâmico com cálculos astronômicos precisos"
+authors = ["Vander Loto <vander.loto@outlook.com>"]
+readme = "README.md"
+license = "MIT"
+keywords = ["biblical", "calendar", "lunisolar", "astronomy", "skyfield", "hebrew"]
+packages = [{include = "biblical_calendar", from = "src"}]
+
+[tool.poetry.scripts]
+biblical-calendar = "biblical_calendar.calendar:main"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+skyfield = "^1.45"
+pandas = "^2.3.2"
+icalendar = "^6.3.1"
+astral = "^3.2"
+pytz = "^2025.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+black = "^23.7.0"
+flake8 = "^6.0.0"
+mypy = "^1.5.0"
+bandit = "^1.7.5"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=src --cov-report=html --cov-fail-under=85"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
