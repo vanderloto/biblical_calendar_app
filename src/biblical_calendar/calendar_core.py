@@ -205,37 +205,38 @@ except Exception:
 
 def get_march_equinox(year: int) -> date:
     """Obtém a data do equinócio de março."""
-    t0 = TS.utc(year, 1, 1)
-    t1 = TS.utc(year, 12, 31)
+    t0 = TS.utc(year, 1, 1, 0, 0, 0)
+    t1 = TS.utc(year, 12, 31, 23, 59, 59)
     times, events = almanac.find_discrete(t0, t1, almanac.seasons(Eph))
     for ti, ev in zip(times, events):
         if ev == 0:
-            return ti.utc_datetime().date()
+            return ti.utc_datetime().replace(tzinfo=timezone.utc).date()
     return date(year, 3, 20)
 
 def find_new_moons_window(start_date: date, end_date: date) -> list[date]:
     """Encontra luas novas astronômicas em um período."""
-    t0 = TS.utc(start_date.year, start_date.month, start_date.day)
-    t1 = TS.utc(end_date.year, end_date.month, end_date.day + 1)
+    t0 = TS.utc(start_date.year, start_date.month, start_date.day, 0, 0, 0)
+    t1 = TS.utc(end_date.year, end_date.month, end_date.day, 23, 59, 59)
     f = almanac.moon_phases(Eph)
     times, phases = almanac.find_discrete(t0, t1, f)
     out = []
     for ti, ph in zip(times, phases):
         if ph == 0:
-            # convert to UTC date
-            out.append(ti.utc_datetime().date())
+            # Force UTC date calculation
+            out.append(ti.utc_datetime().replace(tzinfo=timezone.utc).date())
     return out
 
 def next_new_moon_on_or_after(start_date: date) -> date:
     """Próxima lua nova astronômica em ou após a data especificada."""
-    # search 2 years ahead
-    t0 = TS.utc(start_date.year, start_date.month, start_date.day)
-    t1 = TS.utc(start_date.year + 2, 12, 31)
+    # search 2 years ahead - use UTC midnight
+    t0 = TS.utc(start_date.year, start_date.month, start_date.day, 0, 0, 0)
+    t1 = TS.utc(start_date.year + 2, 12, 31, 23, 59, 59)
     f = almanac.moon_phases(Eph)
     times, phases = almanac.find_discrete(t0, t1, f)
     for ti, ph in zip(times, phases):
         if ph == 0:
-            dt = ti.utc_datetime().date()
+            # Force UTC date calculation
+            dt = ti.utc_datetime().replace(tzinfo=timezone.utc).date()
             if dt >= start_date:
                 return dt
     raise RuntimeError("No new moon found in search window.")
@@ -389,8 +390,8 @@ def export_events_to_ics(event_list: list[dict], filename: str) -> None:
 
 def compute_seasons_for_year(year: int) -> list[dict]:
     """Calcula as estações astronômicas para um ano."""
-    t0 = TS.utc(year, 1, 1)
-    t1 = TS.utc(year, 12, 31)
+    t0 = TS.utc(year, 1, 1, 0, 0, 0)
+    t1 = TS.utc(year, 12, 31, 23, 59, 59)
     times, events = almanac.find_discrete(t0, t1, almanac.seasons(Eph))
     mapping = {0: "March Equinox", 1: "June Solstice", 2: "September Equinox", 3: "December Solstice"}
     out = []
@@ -410,8 +411,8 @@ def sunrise_sunset(location_cfg: dict, target_date: date) -> dict:
 
 def get_moon_phases_for_year(year: int) -> list[dict]:
     """Obtém todas as fases da lua para um ano."""
-    t0 = TS.utc(year, 1, 1)
-    t1 = TS.utc(year, 12, 31)
+    t0 = TS.utc(year, 1, 1, 0, 0, 0)
+    t1 = TS.utc(year, 12, 31, 23, 59, 59)
     f = almanac.moon_phases(Eph)
     times, phases = almanac.find_discrete(t0, t1, f)
     phase_names = {0: "🌑", 1: "🌓", 2: "🌕", 3: "🌗"}
@@ -419,7 +420,7 @@ def get_moon_phases_for_year(year: int) -> list[dict]:
     out = []
     for ti, ph in zip(times, phases):
         out.append({
-            "date": ti.utc_datetime().date(),
+            "date": ti.utc_datetime().replace(tzinfo=timezone.utc).date(),
             "phase": ph,
             "icon": phase_names[ph],
             "name": phase_labels[ph]

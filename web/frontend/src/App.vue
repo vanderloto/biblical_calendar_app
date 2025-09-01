@@ -50,13 +50,34 @@
           <div class="calendar-header">
             <button @click="previousMonth" class="nav-btn">◀ Anterior</button>
             <div class="month-info">
-              <h3>Mês {{ currentMonth.index }} - {{ currentMonth.name }}</h3>
-              <p>{{ formatDate(currentMonth.start) }} - {{ currentMonth.days }} dias</p>
-              <div class="chronologies">
-                <strong>Cronologias do Ano:</strong><br>
-                <span class="chrono-item">Ussher: {{ chronologies.ussher }} AM (desde Criação)</span><br>
-                <span class="chrono-item">Hebraico: {{ chronologies.hebrew }} AM (Anno Mundi)</span><br>
-                <span class="chrono-item">Gregoriano: {{ chronologies.gregorian }} DC (Era Cristã)</span>
+              <div class="info-columns">
+                <div class="left-column">
+                  <h3>Mês {{ currentMonth.index }} - {{ currentMonth.name }}</h3>
+                  <p>{{ formatDate(currentMonth.start) }} - {{ currentMonth.days }} dias</p>
+                  <div class="chronologies">
+                    <strong>Cronologias do Ano:</strong><br>
+                    <span class="chrono-item">Ussher: {{ chronologies.ussher }} AM (desde Criação)</span><br>
+                    <span class="chrono-item">Hebraico: {{ chronologies.hebrew }} AM (Anno Mundi)</span><br>
+                    <span class="chrono-item">Gregoriano: {{ chronologies.gregorian }} DC (Era Cristã)</span>
+                  </div>
+                  <div class="current-season">
+                    <strong>🌍 Estação Atual:</strong><br>
+                    <span class="season-item">Jerusalém: {{ currentSeason.jerusalem }}</span><br>
+                    <span class="season-item">São Paulo: {{ currentSeason.sao_paulo }}</span>
+                  </div>
+                </div>
+                <div class="right-column">
+                  <div class="legend">
+                    <h4>Legenda:</h4>
+                    <div class="legend-item">🌑 Lua Nova</div>
+                    <div class="legend-item">🌓 Lua Crescente</div>
+                    <div class="legend-item">🌕 Lua Cheia</div>
+                    <div class="legend-item">🌗 Lua Minguante</div>
+                    <div class="legend-item">★ Festival</div>
+                    <div class="legend-item">🌍 Estação Astronômica</div>
+                    <div class="legend-item">Fundo azul = Hoje</div>
+                  </div>
+                </div>
               </div>
             </div>
             <button @click="nextMonth" class="nav-btn">Próximo ▶</button>
@@ -88,27 +109,10 @@
             </div>
 
             <div class="events-panel">
-              <div class="legend">
-                <h4>Legenda:</h4>
-                <div class="legend-item">🌑 Lua Nova</div>
-                <div class="legend-item">🌓 Lua Crescente</div>
-                <div class="legend-item">🌕 Lua Cheia</div>
-                <div class="legend-item">🌗 Lua Minguante</div>
-                <div class="legend-item">★ Festival</div>
-                <div class="legend-item">🌍 Estação Astronômica</div>
-                <div class="legend-item">Fundo azul = Hoje</div>
-              </div>
-
               <div class="day-details" v-if="selectedDay">
                 <h4>Eventos do Dia:</h4>
                 <div class="selected-day-info">
                   <strong>Dia {{ selectedDay.dayInMonth }} ({{ selectedDay.gregorianDate }})</strong>
-                </div>
-                
-                <div class="season-info">
-                  <strong>🌍 Estação Astronômica:</strong><br>
-                  Jerusalém: {{ calendarData.current_season.jerusalem }}<br>
-                  São Paulo: {{ calendarData.current_season.sao_paulo }}
                 </div>
 
                 <div v-if="selectedDay.events.length > 0" class="events-list">
@@ -170,6 +174,29 @@ export default {
         
         const response = await axios.get(`/api/calendar/${year.value}`, { params })
         calendarData.value = response.data
+        
+        // Set current month and select today if it's the current year
+        const today = new Date()
+        const todayStr = today.toISOString().split('T')[0]
+        
+        if (year.value === today.getFullYear()) {
+          for (let i = 0; i < calendarData.value.months.length; i++) {
+            const month = calendarData.value.months[i]
+            if (todayStr >= month.start && todayStr <= month.end) {
+              currentMonthIndex.value = i
+              const startDate = new Date(month.start)
+              const dayOfMonth = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1
+              selectedDay.value = {
+                dayInMonth: dayOfMonth,
+                gregorianDate: today.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+                date: todayStr,
+                isToday: true,
+                events: getDayEvents(dayOfMonth, todayStr)
+              }
+              break
+            }
+          }
+        }
       } catch (err) {
         error.value = err.response?.data?.error || 'Erro ao gerar calendário'
       } finally {
@@ -202,6 +229,7 @@ export default {
     }
 
     onMounted(() => {
+      year.value = new Date().getFullYear()
       generateCalendar()
     })
 
@@ -300,33 +328,110 @@ export default {
       selectedDay.value = day
     }
     
-    const previousMonth = () => {
+    const previousMonth = async () => {
       if (currentMonthIndex.value > 0) {
         currentMonthIndex.value--
         selectedDay.value = null
+      } else {
+        // Move to previous year, last month
+        year.value--
+        await generateCalendar()
+        if (calendarData.value) {
+          currentMonthIndex.value = calendarData.value.months.length - 1
+          selectedDay.value = null
+        }
       }
     }
     
-    const nextMonth = () => {
+    const nextMonth = async () => {
       if (calendarData.value && currentMonthIndex.value < calendarData.value.months.length - 1) {
         currentMonthIndex.value++
+        selectedDay.value = null
+      } else {
+        // Move to next year, first month
+        year.value++
+        await generateCalendar()
+        currentMonthIndex.value = 0
         selectedDay.value = null
       }
     }
     
-    const goToToday = () => {
-      const today = new Date().toISOString().split('T')[0]
+    const goToToday = async () => {
+      const today = new Date()
+      const currentYear = today.getFullYear()
+      const todayStr = today.toISOString().split('T')[0]
+      
+      if (year.value !== currentYear) {
+        year.value = currentYear
+        await generateCalendar()
+      }
+      
       if (calendarData.value) {
         for (let i = 0; i < calendarData.value.months.length; i++) {
           const month = calendarData.value.months[i]
-          if (today >= month.start && today <= month.end) {
+          if (todayStr >= month.start && todayStr <= month.end) {
             currentMonthIndex.value = i
-            selectedDay.value = null
+            // Find and select today's day
+            const startDate = new Date(month.start)
+            const dayOfMonth = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1
+            selectedDay.value = {
+              dayInMonth: dayOfMonth,
+              gregorianDate: today.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+              date: todayStr,
+              isToday: true,
+              events: getDayEvents(dayOfMonth, todayStr)
+            }
             break
           }
         }
       }
     }
+
+    const currentSeason = computed(() => {
+      if (!calendarData.value || !calendarData.value.seasons) return { jerusalem: 'N/A', sao_paulo: 'N/A' }
+      
+      // Use selected day if available, otherwise current month's first day
+      let referenceDate
+      if (selectedDay.value) {
+        referenceDate = selectedDay.value.date
+      } else if (currentMonth.value.start) {
+        referenceDate = currentMonth.value.start.split('T')[0]
+      } else {
+        referenceDate = new Date().toISOString().split('T')[0]
+      }
+      
+      const seasons = calendarData.value.seasons
+      let current = null
+      
+      for (let i = 0; i < seasons.length; i++) {
+        const seasonDate = seasons[i].utc.split('T')[0]
+        if (i < seasons.length - 1) {
+          const nextSeasonDate = seasons[i + 1].utc.split('T')[0]
+          if (seasonDate <= referenceDate && referenceDate < nextSeasonDate) {
+            current = seasons[i].event
+            break
+          }
+        } else {
+          if (seasonDate <= referenceDate) {
+            current = seasons[i].event
+            break
+          }
+        }
+      }
+      
+      if (!current && seasons.length > 0) {
+        current = 'December Solstice'
+      }
+      
+      const seasonMap = {
+        'March Equinox': { jerusalem: 'Primavera', sao_paulo: 'Outono' },
+        'June Solstice': { jerusalem: 'Verão', sao_paulo: 'Inverno' },
+        'September Equinox': { jerusalem: 'Outono', sao_paulo: 'Primavera' },
+        'December Solstice': { jerusalem: 'Inverno', sao_paulo: 'Verão' }
+      }
+      
+      return seasonMap[current] || { jerusalem: 'N/A', sao_paulo: 'N/A' }
+    })
 
     return {
       year,
@@ -341,6 +446,7 @@ export default {
       currentMonth,
       chronologies,
       calendarDays,
+      currentSeason,
       generateCalendar,
       exportCSV,
       exportICS,
@@ -507,7 +613,22 @@ button:disabled {
 
 .month-info {
   flex: 1;
+}
+
+.info-columns {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.left-column {
+  flex: 1;
   text-align: center;
+}
+
+.right-column {
+  flex: 0 0 200px;
+  text-align: left;
 }
 
 .month-info h3 {
@@ -525,9 +646,25 @@ button:disabled {
   font-size: 0.8rem;
   color: #666;
   line-height: 1.4;
+  margin-bottom: 1rem;
 }
 
 .chrono-item {
+  display: inline-block;
+  margin-right: 1rem;
+}
+
+.current-season {
+  font-size: 0.8rem;
+  color: #666;
+  line-height: 1.4;
+  padding: 0.5rem;
+  background: #e8f5e8;
+  border-radius: 4px;
+  border-left: 3px solid #28a745;
+}
+
+.season-item {
   display: inline-block;
   margin-right: 1rem;
 }
