@@ -227,14 +227,16 @@ def find_new_moons_window(start_date: date, end_date: date) -> list[date]:
 
 def next_new_moon_on_or_after(start_date: date) -> date:
     """Próxima lua nova astronômica em ou após a data especificada."""
-    # search 2 years ahead
-    t0 = TS.utc(start_date.year, start_date.month, start_date.day)
-    t1 = TS.utc(start_date.year + 2, 12, 31)
+    # search 2 years ahead - force UTC midnight
+    t0 = TS.utc(start_date.year, start_date.month, start_date.day, 0, 0, 0)
+    t1 = TS.utc(start_date.year + 2, 12, 31, 23, 59, 59)
     f = almanac.moon_phases(Eph)
     times, phases = almanac.find_discrete(t0, t1, f)
     for ti, ph in zip(times, phases):
         if ph == 0:
-            dt = ti.utc_datetime().date()
+            # Force UTC conversion
+            dt_utc = ti.utc_datetime().replace(tzinfo=timezone.utc)
+            dt = dt_utc.date()
             if dt >= start_date:
                 return dt
     raise RuntimeError("No new moon found in search window.")
@@ -394,7 +396,7 @@ def compute_seasons_for_year(year: int) -> list[dict]:
     mapping = {0: "March Equinox", 1: "June Solstice", 2: "September Equinox", 3: "December Solstice"}
     out = []
     for ti, ev in zip(times, events):
-        out.append({"event": mapping[ev], "utc": ti.utc_datetime()})
+        out.append({"event": mapping[ev], "utc": ti.utc_datetime().replace(tzinfo=timezone.utc)})
     return out
 
 def sunrise_sunset(location_cfg: dict, target_date: date) -> dict:
