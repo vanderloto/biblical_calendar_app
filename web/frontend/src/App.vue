@@ -46,69 +46,40 @@
           </div>
         </div>
 
-        <div class="tabs">
-          <button 
-            v-for="tab in tabs" 
-            :key="tab.id"
-            @click="activeTab = tab.id"
-            :class="{ active: activeTab === tab.id }"
-            class="tab-button"
-          >
-            {{ tab.name }}
-          </button>
-        </div>
-
-        <div class="tab-content">
-          <div v-if="activeTab === 'months'" class="months-tab">
-            <h3>Meses do Ano</h3>
-            <table class="months-table">
-              <thead>
-                <tr>
-                  <th>Índice</th>
-                  <th>Nome</th>
-                  <th>Início</th>
-                  <th>Fim</th>
-                  <th>Dias</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="month in calendarData.months" :key="month.index">
-                  <td>{{ month.index }}</td>
-                  <td>{{ month.name }}</td>
-                  <td>{{ formatDate(month.start) }}</td>
-                  <td>{{ formatDate(month.end) }}</td>
-                  <td>{{ month.days }}</td>
-                </tr>
-              </tbody>
-            </table>
+        <div class="calendar-visual">
+          <div class="calendar-header">
+            <button @click="previousMonth" class="nav-button">◀ Anterior</button>
+            <h3>{{ currentMonthName }} ({{ currentMonth.days }} dias)</h3>
+            <button @click="nextMonth" class="nav-button">Próximo ▶</button>
           </div>
-
-          <div v-if="activeTab === 'festivals'" class="festivals-tab">
-            <h3>Festivais e Eventos</h3>
-            <div class="festivals-list">
-              <div v-for="festival in calendarData.festivals" :key="festival.name" class="festival-item">
-                <div class="festival-header">
-                  <strong>{{ festival.name }}</strong>
-                  <span class="festival-portuguese">({{ festival.portuguese_name }})</span>
-                  <span class="festival-date">{{ formatDate(festival.date) }}</span>
-                </div>
-                <div class="festival-description">{{ festival.description }}</div>
+          
+          <div class="calendar-grid">
+            <div class="weekday" v-for="day in weekdays" :key="day">{{ day }}</div>
+            <div 
+              v-for="day in calendarDays" 
+              :key="day.date"
+              :class="['calendar-day', { 'today': day.isToday, 'other-month': !day.inMonth }]"
+              @click="selectDay(day)"
+            >
+              <div class="day-number">{{ day.dayNumber }}</div>
+              <div class="day-events">
+                <span v-for="event in day.events" :key="event" class="event-icon">{{ event }}</span>
               </div>
             </div>
           </div>
-
-          <div v-if="activeTab === 'seasons'" class="seasons-tab">
-            <h3>Estações Astronômicas</h3>
-            <div class="seasons-list">
-              <div v-for="season in calendarData.seasons" :key="season.event" class="season-item">
-                <strong>{{ season.event }}</strong>
-                <span class="season-date">{{ formatDateTime(season.utc) }}</span>
+          
+          <div class="day-details" v-if="selectedDay">
+            <h4>{{ formatDate(selectedDay.date) }}</h4>
+            <div class="day-info">
+              <div v-for="festival in getDayFestivals(selectedDay)" :key="festival.name" class="festival-detail">
+                <strong>★ {{ festival.name }}</strong> ({{ festival.portuguese_name }})
+                <p>{{ festival.description }}</p>
               </div>
-            </div>
-            <div class="current-season">
-              <h4>Estação Atual:</h4>
-              <p><strong>Jerusalém:</strong> {{ calendarData.current_season.jerusalem }}</p>
-              <p><strong>São Paulo:</strong> {{ calendarData.current_season.sao_paulo }}</p>
+              <div class="season-info">
+                <strong>Estação:</strong> 
+                Jerusalém: {{ calendarData.current_season.jerusalem }} | 
+                São Paulo: {{ calendarData.current_season.sao_paulo }}
+              </div>
             </div>
           </div>
         </div>
@@ -123,7 +94,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
 export default {
@@ -135,13 +106,10 @@ export default {
     const loading = ref(false)
     const error = ref('')
     const calendarData = ref(null)
-    const activeTab = ref('months')
-
-    const tabs = [
-      { id: 'months', name: 'Meses' },
-      { id: 'festivals', name: 'Festivais' },
-      { id: 'seasons', name: 'Estações' }
-    ]
+    const currentMonthIndex = ref(0)
+    const selectedDay = ref(null)
+    
+    const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
     const generateCalendar = async () => {
       loading.value = true
@@ -190,6 +158,109 @@ export default {
       generateCalendar()
     })
 
+    const currentMonth = computed(() => {
+      return calendarData.value?.months[currentMonthIndex.value] || {}
+    })
+    
+    const currentMonthName = computed(() => {
+      const month = currentMonth.value
+      return month.name ? `${month.name} (${month.index})` : ''
+    })
+    
+    const calendarDays = computed(() => {
+      if (!currentMonth.value.start) return []
+      
+      const startDate = new Date(currentMonth.value.start)
+      const endDate = new Date(currentMonth.value.end)
+      const days = []
+      
+      // Add days from previous month to fill first week
+      const firstDayOfWeek = startDate.getDay()
+      for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+        const date = new Date(startDate)
+        date.setDate(date.getDate() - i - 1)
+        days.push({
+          date: date.toISOString().split('T')[0],
+          dayNumber: date.getDate(),
+          inMonth: false,
+          isToday: false,
+          events: []
+        })
+      }
+      
+      // Add days of current month
+      const currentDate = new Date(startDate)
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split('T')[0]
+        const dayEvents = getDayEvents(dateStr)
+        
+        days.push({
+          date: dateStr,
+          dayNumber: currentDate.getDate(),
+          inMonth: true,
+          isToday: dateStr === new Date().toISOString().split('T')[0],
+          events: dayEvents
+        })
+        
+        currentDate.setDate(currentDate.getDate() + 1)
+      }
+      
+      // Add days from next month to fill last week
+      while (days.length % 7 !== 0) {
+        const date = new Date(currentDate)
+        days.push({
+          date: date.toISOString().split('T')[0],
+          dayNumber: date.getDate(),
+          inMonth: false,
+          isToday: false,
+          events: []
+        })
+        currentDate.setDate(currentDate.getDate() + 1)
+      }
+      
+      return days
+    })
+    
+    const getDayEvents = (dateStr) => {
+      const events = []
+      
+      // Check for festivals
+      calendarData.value?.festivals.forEach(festival => {
+        if (festival.date === dateStr) {
+          events.push('★')
+        }
+      })
+      
+      // Check for seasons
+      calendarData.value?.seasons.forEach(season => {
+        if (season.utc.split('T')[0] === dateStr) {
+          events.push('🌍')
+        }
+      })
+      
+      return events
+    }
+    
+    const getDayFestivals = (day) => {
+      return calendarData.value?.festivals.filter(f => f.date === day.date) || []
+    }
+    
+    const selectDay = (day) => {
+      selectedDay.value = day
+    }
+    
+    const previousMonth = () => {
+      if (currentMonthIndex.value > 0) {
+        currentMonthIndex.value--
+      }
+    }
+    
+    const nextMonth = () => {
+      if (calendarData.value && currentMonthIndex.value < calendarData.value.months.length - 1) {
+        currentMonthIndex.value++
+      }
+    }
+
     return {
       year,
       useVisibility,
@@ -197,13 +268,21 @@ export default {
       loading,
       error,
       calendarData,
-      activeTab,
-      tabs,
+      currentMonthIndex,
+      selectedDay,
+      weekdays,
+      currentMonth,
+      currentMonthName,
+      calendarDays,
       generateCalendar,
       exportCSV,
       exportICS,
       formatDate,
-      formatDateTime
+      formatDateTime,
+      getDayFestivals,
+      selectDay,
+      previousMonth,
+      nextMonth
     }
   }
 }
@@ -323,107 +402,115 @@ button:disabled {
   padding: 0.5rem;
 }
 
-.tabs {
-  display: flex;
-  border-bottom: 1px solid #eee;
-}
-
-.tab-button {
-  background: none;
-  border: none;
-  padding: 1rem 2rem;
-  cursor: pointer;
-  border-bottom: 3px solid transparent;
-  color: #666;
-}
-
-.tab-button.active {
-  color: #667eea;
-  border-bottom-color: #667eea;
-}
-
-.tab-content {
+.calendar-visual {
   padding: 2rem;
 }
 
-.months-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.months-table th,
-.months-table td {
-  padding: 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.months-table th {
-  background: #f8f9fa;
-  font-weight: 600;
-}
-
-.festivals-list {
-  display: grid;
-  gap: 1rem;
-}
-
-.festival-item {
-  border: 1px solid #eee;
-  border-radius: 4px;
-  padding: 1rem;
-}
-
-.festival-header {
+.calendar-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 2rem;
 }
 
-.festival-portuguese {
-  color: #666;
-  font-style: italic;
-}
-
-.festival-date {
-  margin-left: auto;
+.nav-button {
   background: #667eea;
   color: white;
-  padding: 0.25rem 0.5rem;
+  border: none;
+  padding: 0.5rem 1rem;
   border-radius: 4px;
-  font-size: 0.9rem;
+  cursor: pointer;
 }
 
-.festival-description {
+.nav-button:hover {
+  background: #5a6fd8;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: #ddd;
+  border: 1px solid #ddd;
+  margin-bottom: 2rem;
+}
+
+.weekday {
+  background: #f8f9fa;
+  padding: 1rem;
+  text-align: center;
+  font-weight: 600;
+  color: #666;
+}
+
+.calendar-day {
+  background: white;
+  padding: 0.5rem;
+  min-height: 80px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.calendar-day:hover {
+  background: #f8f9fa;
+}
+
+.calendar-day.today {
+  background: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.calendar-day.other-month {
+  background: #f5f5f5;
+  color: #ccc;
+}
+
+.day-number {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.day-events {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.event-icon {
+  font-size: 0.8rem;
+}
+
+.day-details {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 4px;
+  border: 1px solid #eee;
+}
+
+.day-info {
+  margin-top: 1rem;
+}
+
+.festival-detail {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 4px;
+  border-left: 4px solid #667eea;
+}
+
+.festival-detail p {
+  margin-top: 0.5rem;
   color: #666;
   line-height: 1.5;
 }
 
-.seasons-list {
-  display: grid;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.season-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.season-info {
   padding: 1rem;
-  border: 1px solid #eee;
+  background: white;
   border-radius: 4px;
-}
-
-.season-date {
+  border-left: 4px solid #28a745;
   color: #666;
-  font-family: monospace;
-}
-
-.current-season {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 4px;
 }
 
 .export-buttons {
