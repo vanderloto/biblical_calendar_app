@@ -108,10 +108,16 @@ def serve_static_or_spa(path):
         return app.send_static_file('404.html'), 404
     
     # Try to serve static file if exists
-    if os.path.exists(os.path.join(STATIC_DIR, path)):
+    static_file_path = os.path.join(STATIC_DIR, path)
+    if os.path.exists(static_file_path):
         return send_from_directory(STATIC_DIR, path)
     
-    # For SPA routing, serve index
+    # Check if we have Vue.js index.html
+    vue_index = os.path.join(STATIC_DIR, 'index.html')
+    if os.path.exists(vue_index):
+        return send_from_directory(STATIC_DIR, 'index.html')
+    
+    # Fallback to test page
     return render_template_string(HTML_TEMPLATE)
 
 if __name__ == '__main__':

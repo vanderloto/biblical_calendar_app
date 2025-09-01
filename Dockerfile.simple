@@ -1,9 +1,17 @@
+FROM node:18-alpine AS frontend-build
+
+# Build frontend
+WORKDIR /app/frontend
+COPY web/frontend/package*.json ./
+RUN npm ci --only=production
+COPY web/frontend/ ./
+RUN npm run build
+
 FROM python:3.11-slim
 
-# Install system dependencies including tkinter
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
-    python3-tk \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -18,8 +26,8 @@ COPY web/backend/ ./
 COPY src/ ./src/
 COPY web/server.py ./
 
-# Create static directory for frontend (will be served from CDN or separate service)
-RUN mkdir -p static
+# Copy built frontend
+COPY --from=frontend-build /app/frontend/dist ./static
 
 # Expose port
 EXPOSE 10000
