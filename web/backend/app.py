@@ -88,6 +88,8 @@ def get_calendar(year):
         use_visibility = request.args.get('visibility', 'false').lower() == 'true'
         academic_mode = request.args.get('academic', 'false').lower() == 'true'
         
+        print(f"DEBUG: Generating calendar for {year}, visibility={use_visibility}")
+        
         # Load optimal ephemeris
         eph, eph_name = load_optimal_ephemeris(year, force_academic=academic_mode)
         
@@ -96,16 +98,35 @@ def get_calendar(year):
             year, use_visibility_heuristic=use_visibility
         )
         
-        # Convert DataFrame to dict
+        # Debug: print Elul date
+        elul_row = months_df[months_df['index'] == 6].iloc[0]
+        print(f"DEBUG: Elul starts on {elul_row['start']} (type: {type(elul_row['start'])})")
+        
+        # Convert DataFrame to dict - force date serialization
         months = []
         for _, row in months_df.iterrows():
-            months.append({
+            # Ensure dates are properly serialized
+            start_date = row['start']
+            end_date = row['end']
+            
+            # Convert to date if datetime
+            if hasattr(start_date, 'date'):
+                start_date = start_date.date()
+            if hasattr(end_date, 'date'):
+                end_date = end_date.date()
+            
+            month_data = {
                 'index': int(row['index']),
                 'name': row['name'],
-                'start': row['start'].isoformat(),
-                'end': row['end'].isoformat(),
+                'start': start_date.isoformat(),
+                'end': end_date.isoformat(),
                 'days': int(row['days'])
-            })
+            }
+            
+            if row['name'] == 'Elul':
+                print(f"DEBUG: Serializing Elul - start_date={start_date}, isoformat={start_date.isoformat()}")
+            
+            months.append(month_data)
         
         # Get festivals
         combined = FESTIVALS_DEF.copy()
@@ -118,10 +139,15 @@ def get_calendar(year):
             portuguese_name = FESTIVAL_TRANSLATIONS.get(hebrew_name, hebrew_name)
             description = FESTIVAL_DESCRIPTIONS.get(hebrew_name, '')
             
+            # Ensure date is properly serialized
+            fest_date = fest['date']
+            if hasattr(fest_date, 'date'):
+                fest_date = fest_date.date()
+            
             festivals_data.append({
                 'name': hebrew_name,
                 'portuguese_name': portuguese_name,
-                'date': fest['date'].isoformat(),
+                'date': fest_date.isoformat(),
                 'description': description
             })
         
@@ -145,7 +171,7 @@ def get_calendar(year):
             'year': year,
             'ephemeris': eph_name,
             'embolismic': embolismic,
-            'nissan_start': nissan_start.isoformat(),
+            'nissan_start': nissan_start.date().isoformat() if hasattr(nissan_start, 'date') else nissan_start.isoformat(),
             'months': months,
             'festivals': festivals_data,
             'seasons': seasons_data,

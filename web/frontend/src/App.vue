@@ -54,6 +54,7 @@
                 <div class="left-column">
                   <h3>Mês {{ currentMonth.index }} - {{ currentMonth.name }}</h3>
                   <p>{{ formatDate(currentMonth.start) }} - {{ currentMonth.days }} dias</p>
+                  <!-- DEBUG: {{ currentMonth.start }} -->
                   <div class="chronologies">
                     <strong>Cronologias do Ano:</strong><br>
                     <span class="chrono-item">Ussher: {{ chronologies.ussher }} AM (desde Criação)</span><br>
@@ -87,6 +88,9 @@
           <div class="calendar-container">
             <div class="calendar-grid">
               <div class="weekday-header" v-for="day in weekdays" :key="day">{{ day }}</div>
+              
+              <!-- Empty cells for days before month start -->
+              <div v-for="n in startWeekday" :key="'empty-' + n" class="day-cell empty"></div>
               
               <div 
                 v-for="(day, index) in calendarDays" 
@@ -172,14 +176,22 @@ export default {
           academic: academicMode.value
         }
         
-        const response = await axios.get(`/api/calendar/${year.value}`, { params })
+        const response = await axios.get(`http://localhost:5000/api/calendar/${year.value}`, { 
+          params,
+          headers: { 'Cache-Control': 'no-cache' }
+        })
+        
+        // Debug: check Elul date
+        const elulMonth = response.data.months.find(m => m.name === 'Elul')
+        console.log('DEBUG: Elul received from API:', elulMonth)
+        
         calendarData.value = response.data
         
         // Set current month and select today if it's the current year
         const today = new Date()
         const todayStr = today.toISOString().split('T')[0]
         
-        if (year.value === today.getFullYear()) {
+        if (year.value === today.getFullYear() && calendarData.value.months) {
           for (let i = 0; i < calendarData.value.months.length; i++) {
             const month = calendarData.value.months[i]
             if (todayStr >= month.start && todayStr <= month.end) {
@@ -209,7 +221,7 @@ export default {
         visibility: useVisibility.value,
         academic: academicMode.value
       })
-      window.open(`/api/export/csv/${year.value}?${params}`)
+      window.open(`http://localhost:5000/api/export/csv/${year.value}?${params}`)
     }
 
     const exportICS = () => {
@@ -217,11 +229,18 @@ export default {
         visibility: useVisibility.value,
         academic: academicMode.value
       })
-      window.open(`/api/export/ics/${year.value}?${params}`)
+      window.open(`http://localhost:5000/api/export/ics/${year.value}?${params}`)
     }
 
     const formatDate = (dateStr) => {
-      return new Date(dateStr).toLocaleDateString('pt-BR')
+      if (!dateStr) return 'N/A'
+      
+      // Parse as local date to avoid timezone conversion
+      const [year, month, day] = dateStr.split('-').map(Number)
+      const date = new Date(year, month - 1, day)
+      
+      if (isNaN(date.getTime())) return 'Invalid Date'
+      return date.toLocaleDateString('pt-BR')
     }
 
     const formatDateTime = (dateTimeStr) => {
@@ -234,12 +253,17 @@ export default {
     })
 
     const currentMonth = computed(() => {
-      return calendarData.value?.months[currentMonthIndex.value] || {}
+      if (!calendarData.value || !calendarData.value.months || !calendarData.value.months.length) {
+        return {}
+      }
+      return calendarData.value.months[currentMonthIndex.value] || {}
     })
     
     const chronologies = computed(() => {
-      if (!currentMonth.value.start) return { ussher: 0, hebrew: 0, gregorian: 0 }
-      const gregorianYear = new Date(currentMonth.value.start).getFullYear()
+      if (!currentMonth.value || !currentMonth.value.start) return { ussher: 0, hebrew: 0, gregorian: 0 }
+      const date = new Date(currentMonth.value.start)
+      if (isNaN(date.getTime())) return { ussher: 0, hebrew: 0, gregorian: 0 }
+      const gregorianYear = date.getFullYear()
       return {
         ussher: gregorianYear + 4004,
         hebrew: gregorianYear + 3760,
@@ -247,22 +271,33 @@ export default {
       }
     })
     
-    const calendarDays = computed(() => {
-      if (!currentMonth.value.start) return []
+    const startWeekday = computed(() => {
+      if (!currentMonth.value || !currentMonth.value.start) return 0
       
-      const startDate = new Date(currentMonth.value.start)
+      // Calculate day of week for first day of month (Saturday = 6)
+      const [year, month, day] = currentMonth.value.start.split('-').map(Number)
+      const date = new Date(Date.UTC(year, month - 1, day))
+      return date.getUTCDay() // Sunday=0, Monday=1, ..., Saturday=6
+    })
+    
+    const calendarDays = computed(() => {
+      if (!currentMonth.value || !currentMonth.value.start || !currentMonth.value.days) return []
+      
       const days = []
       const today = new Date().toISOString().split('T')[0]
       
-      // Calculate start column (Sunday = 0)
-      const startWeekday = startDate.getDay()
+      // Parse start date components
+      const [startYear, startMonth, startDay] = currentMonth.value.start.split('-').map(Number)
       
       // Add days of current month
       for (let d = 1; d <= currentMonth.value.days; d++) {
-        const currentDate = new Date(startDate)
-        currentDate.setDate(startDate.getDate() + d - 1)
+        // Calculate current date by adding days to start date
+        const currentDate = new Date(Date.UTC(startYear, startMonth - 1, startDay + d - 1))
         const dateStr = currentDate.toISOString().split('T')[0]
-        const gregorianDate = currentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+        
+        // Format gregorian date from dateStr to avoid timezone issues
+        const [year, month, day] = dateStr.split('-').map(Number)
+        const gregorianDate = `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}`
         
         const dayEvents = getDayEvents(d, dateStr)
         
@@ -279,6 +314,8 @@ export default {
     })
     
     const getDayEvents = (dayInMonth, dateStr) => {
+      if (!calendarData.value) return []
+      
       const events = []
       
       // New moon on day 1
@@ -287,32 +324,36 @@ export default {
       }
       
       // Check for festivals
-      calendarData.value?.festivals.forEach(festival => {
-        if (festival.date === dateStr) {
-          events.push({
-            type: 'festival',
-            icon: '★',
-            name: festival.name,
-            portuguese: festival.portuguese_name,
-            description: festival.description
-          })
-        }
-      })
+      if (calendarData.value.festivals) {
+        calendarData.value.festivals.forEach(festival => {
+          if (festival.date === dateStr) {
+            events.push({
+              type: 'festival',
+              icon: '★',
+              name: festival.name,
+              portuguese: festival.portuguese_name,
+              description: festival.description
+            })
+          }
+        })
+      }
       
       // Check for seasons
-      calendarData.value?.seasons.forEach(season => {
-        if (season.utc.split('T')[0] === dateStr) {
-          events.push({
-            type: 'season',
-            icon: '🌍',
-            name: season.event,
-            description: getSeasonDescription(season.event)
-          })
-        }
-      })
+      if (calendarData.value.seasons) {
+        calendarData.value.seasons.forEach(season => {
+          if (season.utc && season.utc.split('T')[0] === dateStr) {
+            events.push({
+              type: 'season',
+              icon: '🌍',
+              name: season.event,
+              description: getSeasonDescription(season.event)
+            })
+          }
+        })
+      }
       
       return events
-    }
+    };
     
     const getSeasonDescription = (event) => {
       const descriptions = {
@@ -446,6 +487,7 @@ export default {
       currentMonth,
       chronologies,
       calendarDays,
+      startWeekday,
       currentSeason,
       generateCalendar,
       exportCSV,

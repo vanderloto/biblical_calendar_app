@@ -227,16 +227,17 @@ def find_new_moons_window(start_date: date, end_date: date) -> list[date]:
 
 def next_new_moon_on_or_after(start_date: date) -> date:
     """Próxima lua nova astronômica em ou após a data especificada."""
-    # search 2 years ahead - force UTC midnight
-    t0 = TS.utc(start_date.year, start_date.month, start_date.day, 0, 0, 0)
-    t1 = TS.utc(start_date.year + 2, 12, 31, 23, 59, 59)
+    # search 2 years ahead - force UTC
+    t0 = TS.utc(start_date.year, start_date.month, start_date.day)
+    t1 = TS.utc(start_date.year + 2, 12, 31)
     f = almanac.moon_phases(Eph)
     times, phases = almanac.find_discrete(t0, t1, f)
     for ti, ph in zip(times, phases):
         if ph == 0:
-            # Force UTC conversion
-            dt_utc = ti.utc_datetime().replace(tzinfo=timezone.utc)
-            dt = dt_utc.date()
+            # Get UTC datetime and convert to date
+            dt_utc = ti.utc_datetime()
+            # Force date conversion in UTC
+            dt = date(dt_utc.year, dt_utc.month, dt_utc.day)
             if dt >= start_date:
                 return dt
     raise RuntimeError("No new moon found in search window.")
