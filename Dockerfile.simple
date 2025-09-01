@@ -1,0 +1,25 @@
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install Python dependencies
+COPY web/backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy all source code
+COPY web/backend/ ./
+COPY src/ ./src/
+COPY web/server.py ./
+
+# Create static directory for frontend (will be served from CDN or separate service)
+RUN mkdir -p static
+
+# Expose port
+EXPOSE 10000
+
+# Start server
+CMD ["python", "server.py"]

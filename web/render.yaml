@@ -2,7 +2,7 @@ services:
   - type: web
     name: biblical-calendar-web
     env: docker
-    dockerfilePath: ./Dockerfile.web
+    dockerfilePath: ./Dockerfile
     dockerContext: .
     plan: free
     region: oregon
