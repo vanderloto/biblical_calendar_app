@@ -40,32 +40,32 @@ Este documento contém o backlog do produto, organizando as funcionalidades e me
 ### 🔴 Crítica
 
 #### WEB-001: Versão Web do Calendário Visual
-**Status**: 📋 Backlog  
+**Status**: ✅ Concluído  
 **Estimativa**: 21 pontos  
-**Assignee**: TBD  
+**Assignee**: Vander Loto  
 **Epic**: Plataforma Web  
 **Labels**: [web, flask, vue, calendar]
 
 **Descrição**: Como usuário, eu quero acessar o calendário bíblico através de um navegador web para que eu possa usar a aplicação em qualquer dispositivo sem instalação.
 
 **Critérios de Aceitação**:
-- [ ] Interface web responsiva com Vue.js 3
-- [ ] Backend Flask com API REST
-- [ ] Calendário visual idêntico ao desktop
-- [ ] Navegação mensal com botões Anterior/Próximo/Hoje
-- [ ] Painel de eventos do dia com descrições
-- [ ] Seleção de ano e opções (visibilidade, modo acadêmico)
-- [ ] Exports CSV/ICS via download
-- [ ] Indicador de efeméride em uso
-- [ ] Suporte a múltiplos usuários simultâneos
+- [x] ~~Interface web responsiva com Vue.js 3~~
+- [x] ~~Backend Flask com API REST~~
+- [x] ~~Calendário visual idêntico ao desktop, com visual aprimorado e moderno~~
+- [x] ~~Navegação mensal com botões Anterior/Próximo/Hoje~~
+- [x] ~~Painel de eventos do dia com descrições~~
+- [x] ~~Seleção de ano e opções (visibilidade, modo acadêmico)~~
+- [x] ~~Exports CSV/ICS via download~~
+- [x] ~~Indicador de efeméride em uso~~
+- [x] ~~Suporte a múltiplos usuários simultâneos~~
 
 **Tarefas Técnicas**:
-- [ ] Criar API Flask com endpoints REST
-- [ ] Desenvolver frontend Vue.js 3 com Composition API
-- [ ] Implementar calendário visual responsivo
-- [ ] Integrar sistema de efemérides no backend
+- [x] ~~Criar API Flask com endpoints REST~~
+- [x] ~~Desenvolver frontend Vue.js 3 com Composition API~~
+- [x] ~~Implementar calendário visual responsivo~~
+- [x] ~~Integrar sistema de efemérides no backend~~
 - [ ] Adicionar cache Redis para performance
-- [ ] Configurar Docker para deploy
+- [x] ~~Configurar Docker para deploy~~
 - [ ] Implementar testes E2E com Cypress
 
 **Dependências**: Funcionalidades desktop estáveis  

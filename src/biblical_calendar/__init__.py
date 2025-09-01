@@ -38,7 +38,7 @@ from .calendar import (
     SAOPAULO
 )
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 __author__ = "Vander Loto"
 __email__ = "vander.loto@outlook.com"
 __description__ = "Calendário bíblico-lunissolar dinâmico com cálculos astronômicos precisos"

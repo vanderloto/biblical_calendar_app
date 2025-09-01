@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "biblical-calendar-app"
-version = "1.2.0"
+version = "1.3.0"
 description = "Calendário bíblico-lunissolar dinâmico com cálculos astronômicos precisos"
 authors = ["Vander Loto <vander.loto@outlook.com>"]
 readme = "README.md"
@@ -13,7 +13,8 @@ biblical-calendar = "biblical_calendar.calendar:main"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-skyfield = "^1.45"
+skyfield = "^1.49"
+numpy = "<2.0"
 pandas = "^2.3.2"
 icalendar = "^6.3.1"
 astral = "^3.2"

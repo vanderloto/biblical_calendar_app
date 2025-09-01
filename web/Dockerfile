@@ -1,0 +1,38 @@
+FROM node:18-alpine AS frontend-build
+
+# Build frontend
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci --only=production
+COPY frontend/ ./
+RUN npm run build
+
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy backend requirements and install Python dependencies
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source code
+COPY backend/ ./
+COPY src/ ./src/
+
+# Copy server file
+COPY web/server.py ./
+
+# Copy built frontend
+COPY --from=frontend-build /app/frontend/dist ./static
+
+# Expose port
+EXPOSE 10000
+
+# Start server
+CMD ["python", "server.py"]

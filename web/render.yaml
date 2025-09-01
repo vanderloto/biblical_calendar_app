@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: biblical-calendar-web
+    env: docker
+    dockerfilePath: ./web/Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/health

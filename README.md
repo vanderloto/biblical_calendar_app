@@ -8,7 +8,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.2.0-orange)](https://github.com/vanderloto/biblical_calendar_app)
+[![Version](https://img.shields.io/badge/Version-2.0.0-orange)](https://github.com/vanderloto/biblical_calendar_app)
 [![Poetry](https://img.shields.io/badge/Poetry-1.5+-green)](https://python-poetry.org)
 [![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen)](tests/)
 
@@ -85,6 +85,8 @@ O Biblical Calendar App é um calendário bíblico-lunissolar dinâmico que calc
 
 ### Funcionalidades Avançadas
 
+- **Versão Web**: Interface web responsiva com Vue.js 3 + Flask API
+- **Deploy Cloud**: Pronto para Render.com, Heroku, Vercel
 - **Exportação CSV**: Dados tabulares para análise com metadados de precisão
 - **Exportação ICS**: Integração com Google Calendar, Outlook, etc.
 - **Interface Multilíngue**: Suporte completo a português
@@ -92,6 +94,7 @@ O Biblical Calendar App é um calendário bíblico-lunissolar dinâmico que calc
 - **Legenda Visual**: Símbolos para fases lunares, festivais e estações
 - **Gestão Inteligente**: Seleção automática da melhor efeméride por ano
 - **Modo Acadêmico**: Precisão máxima para pesquisas científicas
+- **Multi-plataforma**: Desktop (Tkinter) e Web (Vue.js + Flask)
 - **Cronologias Comparativas**: Ussher (Criação), Hebraico (AM) e Gregoriano (DC)
 
 ---
@@ -105,9 +108,12 @@ O Biblical Calendar App é um calendário bíblico-lunissolar dinâmico que calc
 | **Runtime** | Python | 3.11+ | Linguagem principal |
 | **Astronomia** | Skyfield | 1.45+ | Cálculos astronômicos |
 | **Efemérides** | DE421/DE440 | NASA/JPL | Dados planetários precisos |
-| **Interface** | Tkinter | Built-in | GUI nativa |
+| **Interface Desktop** | Tkinter | Built-in | GUI nativa |
+| **Interface Web** | Vue.js 3 | 3.4+ | Frontend moderno |
+| **API Backend** | Flask | 3.0+ | API REST |
 | **Dados** | Pandas | 2.3+ | Manipulação de dados |
 | **Calendário** | iCalendar | 6.3+ | Exportação ICS |
+| **Containerização** | Docker | Latest | Deploy e desenvolvimento |
 
 ### Dependências Principais
 
@@ -151,6 +157,7 @@ graph TB
 - **Espaço em Disco**: 200 MB disponível
 - **Resolução de Tela**: 1440x960 mínimo (recomendado para interface expandida)
 - **Rede**: Conexão com internet para download de efemérides
+- **Navegador Web**: Chrome 90+, Firefox 88+, Safari 14+ (para versão web)
 
 ### Software Necessário
 
@@ -173,6 +180,7 @@ poetry --version
 
 ### Instalação Rápida
 
+#### Versão Desktop
 ```bash
 # Clone o repositório
 git clone https://github.com/vanderloto/biblical_calendar_app.git
@@ -183,6 +191,26 @@ poetry install
 
 # Execute a aplicação
 poetry run biblical-calendar
+```
+
+#### Versão Web
+```bash
+# Clone o repositório
+git clone https://github.com/vanderloto/biblical_calendar_app.git
+cd biblical_calendar_app/web
+
+# Opção 1: Deploy Render.com (Recomendado)
+# Veja: web/deploy-render.md
+
+# Opção 2: Docker Local
+cd docker && docker-compose up -d
+
+# Opção 3: Build Manual
+./build.sh  # Linux/macOS
+# ou
+build.bat   # Windows
+
+# Acesse http://localhost
 ```
 
 ### Instalação Detalhada

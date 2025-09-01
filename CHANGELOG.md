@@ -5,81 +5,129 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
-## [1.2.0] - 2025-01-03
+## [2.0.0] - 2025-09-01
 
-### ✨ Adicionado
-- **Interface Expandida**: Janela aumentada para 1400x900px para melhor experiência visual
-- **Painel de Eventos Ampliado**: Área "Eventos do Dia" expandida (450px largura, 20 linhas altura)
-- **Descrições Completas dos Eventos de Yeshua**: Contexto histórico e teológico detalhado
-- **Correção de Bug**: Descrições dos eventos de Yeshua agora aparecem corretamente no painel
+### Added
+- **Versão Web Completa**: Interface web moderna com Vue.js 3 + Flask API
+- **Deploy Cloud**: Configuração para Render.com, Heroku, Vercel com Docker
+- **Navegação Automática de Anos**: Transição automática entre anos (1-2100)
+- **Estações Dinâmicas**: Atualização automática conforme mês/dia selecionado
+- **Cronologias Organizadas**: Ussher, Hebraico e Gregoriano com descrições
+- **Painel de Eventos Expandido**: 450px com descrições completas
+- **Interface Ampliada**: 1400x900px para melhor visualização
+- **Rótulos Formatados**: "Inicia em:", "Cronologias do Ano:", "Estação Astronômica:" em negrito
+- **Indentação Visual**: Hierarquia clara nas cronologias
+- **Seleção Automática**: Carrega no mês atual com dia atual selecionado
 
-### 🔧 Melhorado
-- **Legibilidade**: Mais espaço para exibição de descrições educativas
-- **Experiência do Usuário**: Interface mais confortável e menos comprimida
-- **Proporções Visuais**: Melhor equilíbrio entre calendário e painel informativo
+### Changed
+- **Interface Desktop**: Aprimorada com melhor organização visual
+- **Navegação**: Botão "Hoje" volta para ano atual quando necessário
+- **Estações**: Jerusalém e São Paulo em linha única separados por "|"
+- **Formatação**: Cronologias com descrições explicativas
+- **Stack Tecnológica**: Adicionado Vue.js 3, Flask API, Docker
 
-### 🐛 Corrigido
-- **Bug de Descrições**: Eventos de Yeshua não exibiam descrições ao clicar nos dias
-- **Lookup de Eventos**: Melhoria na associação entre nomes hebraicos e descrições
+### Fixed
+- **Fuso Horário**: Sincronização perfeita entre versões web e desktop
+- **Navegação de Anos**: Transição automática no primeiro/último mês
+- **Botão Hoje**: Funciona corretamente em qualquer ano
+- **Datas Consistentes**: Web e desktop mostram mesmas datas
 
-## [1.1.0] - 2025-01-02
+### Technical
+- **Backend API**: Flask REST endpoints para calendário, festivais e estações
+- **Frontend Web**: Vue.js 3 Composition API com Pinia state management
+- **DevOps**: Docker multi-stage build com Nginx reverse proxy
+- **UTC Management**: Correção completa de problemas de fuso horário
 
-### ✨ Adicionado
-- **Calendário Visual Interativo**: Navegação mensal com clique em dias
-- **Painel "Eventos do Dia"**: Detalhes expandidos com descrições educativas
-- **Navegação Contínua**: Botões Anterior/Próximo com transição automática de anos (1-2100)
-- **Botão "Hoje"**: Navegação rápida para o mês atual
-- **Cronologias Comparativas**: Ussher (Criação), Hebraico (AM) e Gregoriano (DC)
-- **Festivais Bíblicos Completos**: 10 festivais com nomes hebraicos e traduções
-- **Eventos de Yeshua**: Nascimento (2 hipóteses) e crucificação com contexto
-- **Fases Lunares Completas**: Nova, Crescente, Cheia, Minguante
-- **Estações Astronômicas**: Para Jerusalém e São Paulo
-- **Gerenciamento Inteligente de Efemérides**: Seleção automática DE421/DE440
-- **Modo Pesquisa Acadêmica**: Força DE440 para máxima precisão
-- **Exportação ICS**: Integração com Google Calendar, Outlook
-- **Legenda Visual**: Símbolos para fases lunares, festivais e estações
+## [1.3.0] - 2025-08-20
 
-### 🔧 Melhorado
-- **Estrutura do Projeto**: Reorganização seguindo padrões DATAMETRIA
-- **Documentação**: Estrutura completa com guias técnicos e de usuário
-- **Qualidade de Código**: Type hints, docstrings Google Style, testes
+### Added
+- Suporte inicial ao Oracle Database
+- Painel de monitoramento de conexões
+- Fallback de CDN em redes restritas
+- Validação de entrada implementada
 
-### 🐛 Corrigido
-- **Duplicação de Eventos**: Lua Nova não aparece mais duplicada
-- **Nomes de Festivais**: Correções em hebraico (Chag HaMatzot, Omer Reshit)
+### Changed
+- Atualizado Vue Material para v3.0.1
+- Melhorada gestão de sessões SQLAlchemy
+- Otimizada performance de queries
 
-## [1.0.0] - 2025-01-01
+### Fixed
+- Falha no fallback de CDN
+- Vazamento de sessões SQLAlchemy
+- Problemas de conectividade em redes corporativas
 
-### ✨ Adicionado
-- **Calendário Bíblico Dinâmico**: Meses baseados em luas novas astronômicas
-- **Heurística de Visibilidade**: Primeira crescente visível em Jerusalém
-- **Detecção Automática**: Anos embolísmicos (13 meses) com Adar I/II
-- **Cálculos Astronômicos**: Skyfield com efemérides DE421
-- **Interface Tkinter**: GUI nativa multiplataforma
-- **Exportação CSV**: Dados tabulares para análise
-- **Festivais Básicos**: Principais festas bíblicas
-- **Estações**: Equinócios e solstícios
+## [1.2.0] - 2025-07-15
 
-### 🏗️ Arquitetura
-- **Python 3.11+**: Runtime moderno
-- **Poetry**: Gerenciamento de dependências
-- **Skyfield**: Cálculos astronômicos precisos
-- **Pandas**: Manipulação de dados
-- **Astral**: Cálculos solares
+### Added
+- Modo Pesquisa Acadêmica com DE440
+- Seleção automática de efemérides por ano
+- Cronologias comparativas (Ussher, Hebraico, Gregoriano)
+- Exportação ICS para integração com calendários
+
+### Changed
+- Interface expandida para 1400x900px
+- Painel de eventos ampliado para 450px
+- Melhorada navegação entre meses
+
+### Fixed
+- Cálculos de anos embolísmicos
+- Precisão de datas de festivais
+- Performance em anos extremos
+
+## [1.1.0] - 2025-06-10
+
+### Added
+- Heurística de visibilidade da primeira crescente
+- Festivais bíblicos completos (10 festivais)
+- Eventos de Yeshua com múltiplas hipóteses
+- Estações astronômicas para Jerusalém e São Paulo
+
+### Changed
+- Interface visual aprimorada
+- Navegação contínua entre meses
+- Descrições educativas expandidas
+
+### Fixed
+- Cálculos de fases lunares
+- Precisão de equinócios e solstícios
+- Formatação de datas
+
+## [1.0.0] - 2025-05-01
+
+### Added
+- Calendário bíblico-lunissolar dinâmico
+- Cálculos astronômicos com Skyfield
+- Interface Tkinter nativa
+- Exportação CSV de meses
+- Suporte a efemérides DE421
+- Detecção automática de anos embolísmicos
+- 10 festivais bíblicos principais
+- Fases lunares completas
+- Documentação completa
+
+### Technical
+- Python 3.11+ como runtime
+- Poetry para gerenciamento de dependências
+- Skyfield 1.45+ para astronomia
+- Pandas para manipulação de dados
+- iCalendar para exportação ICS
 
 ---
 
 ## Tipos de Mudanças
 
-- `✨ Adicionado` para novas funcionalidades
-- `🔧 Melhorado` para mudanças em funcionalidades existentes
-- `🐛 Corrigido` para correção de bugs
-- `🗑️ Removido` para funcionalidades removidas
-- `🔒 Segurança` para vulnerabilidades corrigidas
-- `📚 Documentação` para mudanças na documentação
-- `🏗️ Arquitetura` para mudanças estruturais
+- `Added` para novas funcionalidades
+- `Changed` para mudanças em funcionalidades existentes
+- `Deprecated` para funcionalidades que serão removidas
+- `Removed` para funcionalidades removidas
+- `Fixed` para correções de bugs
+- `Security` para correções de vulnerabilidades
+- `Technical` para mudanças técnicas internas
 
----
+## Links de Comparação
 
-**Mantido por**: Vander Loto - DATAMETRIA  
-**Próxima versão planejada**: 1.3.0 (Web Version MVP)
+- [2.0.0]: https://github.com/vanderloto/biblical_calendar_app/compare/v1.3.0...v2.0.0
+- [1.3.0]: https://github.com/vanderloto/biblical_calendar_app/compare/v1.2.0...v1.3.0
+- [1.2.0]: https://github.com/vanderloto/biblical_calendar_app/compare/v1.1.0...v1.2.0
+- [1.1.0]: https://github.com/vanderloto/biblical_calendar_app/compare/v1.0.0...v1.1.0
+- [1.0.0]: https://github.com/vanderloto/biblical_calendar_app/releases/tag/v1.0.0
