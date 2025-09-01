@@ -2,9 +2,9 @@ FROM node:18-alpine AS frontend-build
 
 # Build frontend
 WORKDIR /app/frontend
-COPY ./frontend/package*.json ./
+COPY web/frontend/package*.json ./
 RUN npm ci --only=production
-COPY ./frontend/ ./
+COPY web/frontend/ ./
 RUN npm run build
 
 FROM python:3.11-slim
@@ -18,15 +18,15 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy backend requirements and install Python dependencies
-COPY ./backend/requirements.txt ./
+COPY web/backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
-COPY ./backend/ ./
-COPY ../src/ ./src/
+COPY web/backend/ ./
+COPY src/ ./src/
 
 # Copy server file
-COPY ./server.py ./
+COPY web/server.py ./
 
 # Copy built frontend
 COPY --from=frontend-build /app/frontend/dist ./static
