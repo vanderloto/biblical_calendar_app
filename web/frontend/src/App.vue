@@ -176,7 +176,8 @@ export default {
           academic: academicMode.value
         }
         
-        const response = await axios.get(`http://localhost:5000/api/calendar/${year.value}`, { 
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+        const response = await axios.get(`${apiBaseUrl}/calendar/${year.value}`, { 
           params,
           headers: { 'Cache-Control': 'no-cache' }
         })
@@ -221,7 +222,8 @@ export default {
         visibility: useVisibility.value,
         academic: academicMode.value
       })
-      window.open(`http://localhost:5000/api/export/csv/${year.value}?${params}`)
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+      window.open(`${apiBaseUrl}/export/csv/${year.value}?${params}`)
     }
 
     const exportICS = () => {
@@ -229,7 +231,8 @@ export default {
         visibility: useVisibility.value,
         academic: academicMode.value
       })
-      window.open(`http://localhost:5000/api/export/ics/${year.value}?${params}`)
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+      window.open(`${apiBaseUrl}/export/ics/${year.value}?${params}`)
     }
 
     const formatDate = (dateStr) => {

@@ -181,7 +181,14 @@ def get_calendar(year):
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        error_details = {
+            'error': str(e),
+            'type': type(e).__name__,
+            'traceback': traceback.format_exc()
+        }
+        print(f"ERROR in get_calendar: {error_details}")
+        return jsonify(error_details), 500
 
 @app.route('/api/export/csv/<int:year>', methods=['GET'])
 def export_csv(year):
