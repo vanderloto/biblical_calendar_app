@@ -355,6 +355,20 @@ export default {
         })
       }
       
+      // Check for moon phases
+      if (calendarData.value.moon_phases) {
+        calendarData.value.moon_phases.forEach(phase => {
+          if (phase.date === dateStr) {
+            events.push({
+              type: 'moon_phase',
+              icon: phase.icon,
+              name: phase.name,
+              description: getMoonPhaseDescription(phase.name)
+            })
+          }
+        })
+      }
+      
       return events
     };
     
@@ -366,6 +380,16 @@ export default {
         'December Solstice': 'Em Jerusalém, marca o início do inverno (Hemisfério Norte). Em São Paulo, marca o início do verão (Hemisfério Sul)'
       }
       return descriptions[event] || ''
+    }
+    
+    const getMoonPhaseDescription = (phaseName) => {
+      const descriptions = {
+        'Lua Nova': 'Fase lunar onde a Lua não é visível da Terra, marcando o início do mês bíblico.',
+        'Lua Crescente': 'Primeiro quarto lunar, quando metade da Lua é visível no céu.',
+        'Lua Cheia': 'Fase lunar onde a Lua está completamente iluminada e visível.',
+        'Lua Minguante': 'Último quarto lunar, quando a outra metade da Lua é visível.'
+      }
+      return descriptions[phaseName] || ''
     }
     
     const selectDay = (day) => {
@@ -500,7 +524,8 @@ export default {
       selectDay,
       previousMonth,
       nextMonth,
-      goToToday
+      goToToday,
+      getMoonPhaseDescription
     }
   }
 }

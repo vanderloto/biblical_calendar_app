@@ -36,6 +36,8 @@ from biblical_calendar.calendar_core import (
     FESTIVAL_DESCRIPTIONS,
     CURRENT_EPHEMERIS
 )
+from skyfield.api import load
+from skyfield.almanac import find_discrete, moon_phases
 
 def get_current_season_for_date(target_date, seasons):
     """Obtém a estação astronômica atual para ambas as localidades."""
@@ -160,6 +162,24 @@ def get_calendar(year):
                 'utc': season['utc'].isoformat()
             })
         
+        # Get moon phases for the year
+        ts = load.timescale()
+        t0 = ts.utc(year, 1, 1)
+        t1 = ts.utc(year + 1, 1, 1)
+        
+        times, phases = find_discrete(t0, t1, moon_phases(eph))
+        
+        moon_phases_data = []
+        phase_names = ['🌑', '🌓', '🌕', '🌗']  # New, First Quarter, Full, Last Quarter
+        
+        for t, phase in zip(times, phases):
+            moon_phases_data.append({
+                'date': t.utc_datetime().date().isoformat(),
+                'phase': int(phase),
+                'icon': phase_names[phase],
+                'name': ['Lua Nova', 'Lua Crescente', 'Lua Cheia', 'Lua Minguante'][phase]
+            })
+        
         # Get current season for today
         current_season = get_current_season_for_date(datetime.now().date(), seasons)
         current_season_data = {
@@ -175,6 +195,7 @@ def get_calendar(year):
             'months': months,
             'festivals': festivals_data,
             'seasons': seasons_data,
+            'moon_phases': moon_phases_data,
             'current_season': current_season_data,
             'use_visibility': use_visibility,
             'academic_mode': academic_mode
